@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'dart:async';
-import 'package:sqlite/dbhelper.dart';
-import 'package:sqlite/entryform.dart';
-import 'item.dart';
+import 'Item.dart';
+import 'db/dbhelper.dart';
+import 'entryform.dart';
 
+//pendukung program asinkron
 class Home extends StatefulWidget {
   @override
   HomeState createState() => HomeState();
@@ -13,11 +14,11 @@ class Home extends StatefulWidget {
 class HomeState extends State<Home> {
   DbHelper dbHelper = DbHelper();
   int count = 0;
-  List<Item> itemList;
+  late List<Item> itemList;
   @override
   Widget build(BuildContext context) {
     if (itemList == null) {
-      itemList = List<Item>();
+      itemList = <Item>[];
     }
     return Scaffold(
       appBar: AppBar(
@@ -34,7 +35,10 @@ class HomeState extends State<Home> {
             child: RaisedButton(
               child: Text("Tambah Item"),
               onPressed: () async {
-                var item = await navigateToEntryForm(context, null);
+                var item = await navigateToEntryForm(
+                  context,
+                  Item(_name, _price),),
+                );
                 if (item != null) {
                   //TODO 2 Panggil Fungsi untuk Insert ke DB
                   int result = await dbHelper.insert(item);
@@ -59,7 +63,7 @@ class HomeState extends State<Home> {
   }
 
   ListView createListView() {
-    TextStyle textStyle = Theme.of(context).textTheme.headline5;
+    TextStyle? textStyle = Theme.of(context).textTheme.headline5;
     return ListView.builder(
       itemCount: count,
       itemBuilder: (BuildContext context, int index) {
@@ -80,12 +84,20 @@ class HomeState extends State<Home> {
               child: Icon(Icons.delete),
               onTap: () async {
                 //TODO 3 Panggil Fungsi untuk Delete dari DB berdasarkan Item
+                int result = await dbHelper.delete(this.itemList[index].id);
               },
             ),
             onTap: () async {
               var item =
                   await navigateToEntryForm(context, this.itemList[index]);
               //TODO 4 Panggil Fungsi untuk Edit data
+              if (item != null) {
+                //TODO 5 Update data
+                int result = await dbHelper.update(item);
+                if (result > 0) {
+                  updateListView();
+                }
+              }
             },
           ),
         );

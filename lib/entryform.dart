@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'item.dart';
+import 'Item.dart';
 
 class EntryForm extends StatefulWidget {
   final Item item;
@@ -82,8 +82,10 @@ class EntryFormState extends State<EntryForm> {
                         onPressed: () {
                           if (item == null) {
                             // tambah data
-                            item = Item(nameController.text,
-                                int.parse(priceController.text));
+                            item = Item(
+                              nameController.text,
+                              int.parse(priceController.text),
+                            );
                           } else {
                             // ubah data
                             item.name = nameController.text;
