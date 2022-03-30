@@ -1,11 +1,10 @@
+import 'package:sqlite_flutter/db/dbhelper.dart';
 import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
-import 'dart:async';
+
 import 'Item.dart';
-import 'db/dbhelper.dart';
 import 'entryform.dart';
 
-//pendukung program asinkron
 class Home extends StatefulWidget {
   @override
   HomeState createState() => HomeState();
@@ -14,9 +13,11 @@ class Home extends StatefulWidget {
 class HomeState extends State<Home> {
   DbHelper dbHelper = DbHelper();
   int count = 0;
-  late List<Item> itemList;
+  List<Item>? itemList;
   @override
   Widget build(BuildContext context) {
+    updateListView();
+
     if (itemList == null) {
       itemList = <Item>[];
     }
@@ -35,10 +36,7 @@ class HomeState extends State<Home> {
             child: RaisedButton(
               child: Text("Tambah Item"),
               onPressed: () async {
-                var item = await navigateToEntryForm(
-                  context,
-                  Item(_name, _price),),
-                );
+                var item = await navigateToEntryForm(context, null);
                 if (item != null) {
                   //TODO 2 Panggil Fungsi untuk Insert ke DB
                   int result = await dbHelper.insert(item);
@@ -54,7 +52,7 @@ class HomeState extends State<Home> {
     );
   }
 
-  Future<Item> navigateToEntryForm(BuildContext context, Item item) async {
+  Future<Item?> navigateToEntryForm(BuildContext context, Item? item) async {
     var result = await Navigator.push(context,
         MaterialPageRoute(builder: (BuildContext context) {
       return EntryForm(item);
@@ -71,33 +69,41 @@ class HomeState extends State<Home> {
           color: Colors.white,
           elevation: 2.0,
           child: ListTile(
+            isThreeLine: true,
             leading: CircleAvatar(
               backgroundColor: Colors.red,
               child: Icon(Icons.ad_units),
             ),
             title: Text(
-              this.itemList[index].name,
+              this.itemList![index].name,
               style: textStyle,
             ),
-            subtitle: Text(this.itemList[index].price.toString()),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text("Price : " + this.itemList![index].price.toString()),
+                SizedBox(
+                  height: 5.0,
+                ),
+                Text("Stock : " + this.itemList![index].stock.toString()),
+                Text("Kode Barang : " +
+                    this.itemList![index].kodeBarang.toString()),
+              ],
+            ),
             trailing: GestureDetector(
               child: Icon(Icons.delete),
               onTap: () async {
                 //TODO 3 Panggil Fungsi untuk Delete dari DB berdasarkan Item
-                int result = await dbHelper.delete(this.itemList[index].id);
+                dbHelper.delete(itemList![index].id);
+                updateListView();
               },
             ),
             onTap: () async {
               var item =
-                  await navigateToEntryForm(context, this.itemList[index]);
+                  await navigateToEntryForm(context, this.itemList![index]);
               //TODO 4 Panggil Fungsi untuk Edit data
-              if (item != null) {
-                //TODO 5 Update data
-                int result = await dbHelper.update(item);
-                if (result > 0) {
-                  updateListView();
-                }
-              }
+              dbHelper.update(item!);
+              updateListView();
             },
           ),
         );
